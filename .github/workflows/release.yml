@@ -72,6 +72,16 @@ jobs:
               oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
           done
 
+          # Make the chart package public
+          for chart_dir in charts/*/; do
+            chart_name=$(basename $chart_dir)
+            curl -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/user/packages/container/${{ github.repository_owner }}%2Fcharts%2F${chart_name}/versions \
+              -d '{"visibility":"public"}' || true
+          done
+
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
