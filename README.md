@@ -44,7 +44,7 @@ Use the complete web bundle (deployment, service, ingress, secrets):
 
 ```yaml
 # templates/common.yaml
-{{ include "common.web" . }}
+{ { include "common.web" . } }
 ```
 
 ### Individual Templates
@@ -94,9 +94,9 @@ ingress:
   className: nginx
   clusterIssuer: letsencrypt-http
   host: myapp.example.com
-  proxyBodySize: "200m"    # optional
-  timeout: "3600"          # optional
-  keepAlive: "3600"        # optional
+  proxyBodySize: "200m" # optional
+  timeout: "3600" # optional
+  keepAlive: "3600" # optional
 
 resources:
   requests:
@@ -115,8 +115,8 @@ secretStore:
   kind: ClusterSecretStore
 
 secrets:
-  - API_KEY
-  - DATABASE_PASSWORD
+  API_KEY: entry/api-key
+  DATABASE_PASSWORD: entry/database-password
 
 imagePullSecret:
   create: true
