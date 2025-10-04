@@ -1,0 +1,15 @@
+apiVersion: v2
+name: common
+description: Common Helm library chart with reusable templates for Kubernetes deployments
+type: library
+version: 0.0.0 # Will be set by CI/CD
+home: https://github.com/starburst997/charts-library
+sources:
+  - https://github.com/starburst997/charts-library
+maintainers:
+  - name: starburst997
+keywords:
+  - library
+  - common
+  - templates
+  - kubernetes

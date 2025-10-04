@@ -1,0 +1,10 @@
+{{/*
+Standard Kubernetes Namespace
+Usage: {{ include "common.namespace" . }}
+*/}}
+{{- define "common.namespace" -}}
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.namespace }}
+{{- end -}}

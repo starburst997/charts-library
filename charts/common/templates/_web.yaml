@@ -1,0 +1,20 @@
+{{/*
+Complete web application deployment bundle
+Includes: deployment, service, ingress, secrets, and image pull secrets
+Usage: {{ include "common.web" . }}
+*/}}
+{{- define "common.web" -}}
+{{ include "common.deployment" . }}
+---
+{{ include "common.service" . }}
+---
+{{- if .Values.ingress.enabled }}
+{{ include "common.ingress" . }}
+---
+{{- end }}
+{{ include "common.externalSecret" . }}
+---
+{{ include "common.imagePullSecret" . }}
+---
+{{ include "common.namespace" . }}
+{{- end -}}
