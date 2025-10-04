@@ -38,12 +38,12 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
             {{- end }}
-            {{- range .Values.secrets }}
-            - name: {{ . }}
+            {{- range $key, $value := .Values.secrets }}
+            - name: {{ $key }}
               valueFrom:
                 secretKeyRef:
                   name: {{ $.Chart.Name }}
-                  key: {{ . }}
+                  key: {{ $key }}
             {{- end }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
 {{- end -}}
