@@ -44,7 +44,7 @@ Use the complete web bundle (deployment, service, ingress, secrets):
 
 ```yaml
 # templates/common.yaml
-{ { include "common.web" . } }
+{{ include "common.web" . }}
 ```
 
 ### Individual Templates
