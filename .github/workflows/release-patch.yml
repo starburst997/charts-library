@@ -1,0 +1,61 @@
+name: Release Patch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get Current Version
+        id: version
+        run: |
+          # Fetch all tags
+          git fetch --tags
+
+          # Get latest tag
+          LATEST_TAG=$(git tag -l "v*" --sort=-version:refname | head -n1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "Error: No tags found"
+            exit 1
+          fi
+
+          VERSION=${LATEST_TAG#v}
+
+          # Get previous release tag (could be any version)
+          PREVIOUS_RELEASE=$(git tag -l "v*" --sort=-version:refname | sed -n '2p')
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "previous_release=$PREVIOUS_RELEASE" >> $GITHUB_OUTPUT
+          echo "📦 Creating release for version: $VERSION"
+
+      - name: Generate Release Notes
+        id: notes
+        run: |
+          if [ -n "${{ steps.version.outputs.previous_release }}" ]; then
+            COMMITS=$(git log ${{ steps.version.outputs.previous_release }}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.version }}
+          body: ${{ steps.notes.outputs.body }}
+          makeLatest: true
