@@ -9,6 +9,7 @@ A collection of reusable Helm library charts for Kubernetes deployments with Git
 A Helm library chart providing reusable templates for common Kubernetes resources.
 
 **Features:**
+
 - 🚀 Standard deployment patterns
 - 🔐 External Secrets integration
 - 🐳 Private registry support (imagePullSecrets)
@@ -25,7 +26,7 @@ Add to your `Chart.yaml`:
 ```yaml
 dependencies:
   - name: common
-    version: "0.1.0"
+    version: ">=0.0.0"
     repository: "oci://ghcr.io/starburst997/charts"
 ```
 
@@ -132,11 +133,11 @@ imagePullSecret:
 # Chart.yaml
 apiVersion: v2
 name: my-app
-version: 0.1.0
-appVersion: "1.0.0"
+version: 0.0.0
+appVersion: "0.0.0"
 dependencies:
   - name: common
-    version: "0.1.0"
+    version: ">=0.0.0"
     repository: "oci://ghcr.io/starburst997/charts"
 
 # templates/common.yaml
@@ -175,15 +176,15 @@ helm push common-0.1.0.tgz oci://ghcr.io/starburst997/charts
 
 ## Available Templates
 
-| Template | Description |
-|----------|-------------|
-| `common.web` | Complete web app bundle (all resources) |
-| `common.deployment` | Kubernetes Deployment |
-| `common.service` | Kubernetes Service |
-| `common.ingress` | Kubernetes Ingress with nginx support |
-| `common.namespace` | Kubernetes Namespace |
-| `common.externalSecret` | External Secrets for app secrets |
-| `common.imagePullSecret` | External Secrets for registry auth |
+| Template                 | Description                             |
+| ------------------------ | --------------------------------------- |
+| `common.web`             | Complete web app bundle (all resources) |
+| `common.deployment`      | Kubernetes Deployment                   |
+| `common.service`         | Kubernetes Service                      |
+| `common.ingress`         | Kubernetes Ingress with nginx support   |
+| `common.namespace`       | Kubernetes Namespace                    |
+| `common.externalSecret`  | External Secrets for app secrets        |
+| `common.imagePullSecret` | External Secrets for registry auth      |
 
 ## Requirements
 
