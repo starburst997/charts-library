@@ -43,7 +43,21 @@ jobs:
 
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "latest_tag=$LATEST_STABLE" >> $GITHUB_OUTPUT
           echo "📦 Version: $VERSION"
+
+      - name: Generate Release Notes
+        id: notes
+        run: |
+          if [ -n "${{ steps.version.outputs.latest_tag }}" ]; then
+            COMMITS=$(git log ${{ steps.version.outputs.latest_tag }}..HEAD --pretty=format:"- %s (%h)" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          fi
+
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Create Version Tag
         run: |
@@ -87,5 +101,5 @@ jobs:
         with:
           tag: ${{ steps.version.outputs.tag }}
           name: Release ${{ steps.version.outputs.version }}
-          generateReleaseNotes: true
+          body: ${{ steps.notes.outputs.body }}
           makeLatest: true
