@@ -15,6 +15,8 @@ spec:
       app: {{ .Chart.Name }}
   template:
     metadata:
+      annotations:
+        reloader.stakater.com/search: "true"  # Auto-reload on ConfigMap/Secret changes
       labels:
         app: {{ .Chart.Name }}
     spec:
