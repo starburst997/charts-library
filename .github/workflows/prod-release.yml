@@ -1,4 +1,4 @@
-name: Deploy Charts
+name: Production Release
 
 on:
   push:
@@ -13,7 +13,8 @@ permissions:
   packages: write
 
 jobs:
-  release:
+  release-production:
+    name: Build and Release Production
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,34 +24,7 @@ jobs:
 
       - name: Determine Version
         id: version
-        run: |
-          # Fetch all tags
-          git fetch --tags
-
-          # Get latest stable tag
-          LATEST_STABLE=$(git tag -l "v*" --sort=-version:refname | head -n1)
-
-          if [ -z "$LATEST_STABLE" ]; then
-            # No tags exist, start at 1.0.0
-            VERSION="1.0.0"
-          else
-            # Increment patch version
-            STABLE_VER=${LATEST_STABLE#v}
-            IFS='.' read -r MAJOR MINOR PATCH <<< "$STABLE_VER"
-            PATCH=$((PATCH + 1))
-            VERSION="${MAJOR}.${MINOR}.${PATCH}"
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-          echo "📦 Version: $VERSION"
-
-      - name: Create Version Tag
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag ${{ steps.version.outputs.tag }}
-          git push origin ${{ steps.version.outputs.tag }}
+        uses: starburst997/auto-version@v1
 
       - name: Set up Helm
         uses: azure/setup-helm@v4
@@ -59,8 +33,8 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ github.repository_owner }}
+          password: ${{ github.token }}
 
       - name: Package and Push Charts
         run: |
@@ -81,3 +55,6 @@ jobs:
               https://api.github.com/user/packages/container/${{ github.repository_owner }}%2Fcharts%2F${chart_name}/versions \
               -d '{"visibility":"public"}' || true
           done
+
+      - name: Generate changelog and create release
+        uses: starburst997/commits-logs@v1
