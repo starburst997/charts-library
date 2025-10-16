@@ -55,7 +55,11 @@ spec:
           {{- $livenessDelay := (.Values.healthCheck).livenessInitialDelay | default 15 }}
           {{- $periodSeconds := (.Values.healthCheck).periodSeconds | default 5 }}
           {{- $timeoutSeconds := (.Values.healthCheck).timeoutSeconds | default 3 }}
+          {{- $successThreshold := (.Values.healthCheck).successThreshold | default 1 }}
           {{- $failureThreshold := (.Values.healthCheck).failureThreshold | default 3 }}
+          {{- $readinessSuccessThreshold := (.Values.healthCheck).readinessSuccessThreshold | default $successThreshold }}
+          {{- $readinessFailureThreshold := (.Values.healthCheck).readinessFailureThreshold | default $failureThreshold }}
+          {{- $livenessFailureThreshold := (.Values.healthCheck).livenessFailureThreshold | default $failureThreshold }}
           {{- if .Values.readinessProbe }}
           readinessProbe: {{- toYaml .Values.readinessProbe | nindent 12 }}
           {{- else }}
@@ -66,8 +70,8 @@ spec:
             initialDelaySeconds: {{ $readinessDelay }}
             periodSeconds: {{ $periodSeconds }}
             timeoutSeconds: {{ $timeoutSeconds }}
-            successThreshold: 1
-            failureThreshold: {{ $failureThreshold }}
+            successThreshold: {{ $readinessSuccessThreshold }}
+            failureThreshold: {{ $readinessFailureThreshold }}
           {{- end }}
           {{- if .Values.livenessProbe }}
           livenessProbe: {{- toYaml .Values.livenessProbe | nindent 12 }}
@@ -79,7 +83,7 @@ spec:
             initialDelaySeconds: {{ $livenessDelay }}
             periodSeconds: {{ mul $periodSeconds 2 }}
             timeoutSeconds: {{ $timeoutSeconds }}
-            failureThreshold: {{ $failureThreshold }}
+            failureThreshold: {{ $livenessFailureThreshold }}
           {{- end }}
           {{- end }}
 {{- end -}}
