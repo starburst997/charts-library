@@ -48,4 +48,38 @@ spec:
                   key: {{ $key }}
             {{- end }}
           resources: {{- toYaml .Values.resources | nindent 12 }}
+          {{- if ne ((.Values.healthCheck).enabled | default true) false }}
+          {{- $healthPath := (.Values.healthCheck).path | default "/" }}
+          {{- $healthPort := (.Values.healthCheck).port | default .Values.service.targetPort }}
+          {{- $readinessDelay := (.Values.healthCheck).readinessInitialDelay | default 5 }}
+          {{- $livenessDelay := (.Values.healthCheck).livenessInitialDelay | default 15 }}
+          {{- $periodSeconds := (.Values.healthCheck).periodSeconds | default 5 }}
+          {{- $timeoutSeconds := (.Values.healthCheck).timeoutSeconds | default 3 }}
+          {{- $failureThreshold := (.Values.healthCheck).failureThreshold | default 3 }}
+          {{- if .Values.readinessProbe }}
+          readinessProbe: {{- toYaml .Values.readinessProbe | nindent 12 }}
+          {{- else }}
+          readinessProbe:
+            httpGet:
+              path: {{ $healthPath }}
+              port: {{ $healthPort }}
+            initialDelaySeconds: {{ $readinessDelay }}
+            periodSeconds: {{ $periodSeconds }}
+            timeoutSeconds: {{ $timeoutSeconds }}
+            successThreshold: 1
+            failureThreshold: {{ $failureThreshold }}
+          {{- end }}
+          {{- if .Values.livenessProbe }}
+          livenessProbe: {{- toYaml .Values.livenessProbe | nindent 12 }}
+          {{- else }}
+          livenessProbe:
+            httpGet:
+              path: {{ $healthPath }}
+              port: {{ $healthPort }}
+            initialDelaySeconds: {{ $livenessDelay }}
+            periodSeconds: {{ mul $periodSeconds 2 }}
+            timeoutSeconds: {{ $timeoutSeconds }}
+            failureThreshold: {{ $failureThreshold }}
+          {{- end }}
+          {{- end }}
 {{- end -}}
