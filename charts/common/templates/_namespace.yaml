@@ -2,9 +2,11 @@
 Standard Kubernetes Namespace
 Usage: {{ include "common.namespace" . }}
 */}}
+{{- if .Values.createNamespace | default true }}
 {{- define "common.namespace" -}}
 apiVersion: v1
 kind: Namespace
 metadata:
   name: {{ .Values.namespace }}
+{{- end -}}
 {{- end -}}
