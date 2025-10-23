@@ -10,8 +10,8 @@ permissions:
   packages: write
 
 jobs:
-  release-production:
-    name: Build and Release Production
+  release:
+    name: Build and Release
     runs-on: ubuntu-latest
     steps:
       - name: Initialize custom bot
