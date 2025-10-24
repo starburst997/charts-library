@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Charts Library - Reusable Helm Charts</title>
+    <meta
+      name="description"
+      content="Reusable Helm library charts for Kubernetes deployments with GitOps best practices."
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #d0d0d9;
+        background: #0c1018;
+        min-height: 100vh;
+      }
+
+      .hero-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 100vh;
+        background: linear-gradient(135deg, #0c1018 0%, #191923 100%);
+        z-index: -1;
+      }
+
+      .hero-accent {
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, #61afff20 0%, transparent 70%);
+        top: -300px;
+        left: 50%;
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header {
+        padding: 2rem 0;
+        text-align: center;
+      }
+
+      .hero {
+        padding: 4rem 0 6rem;
+        text-align: center;
+      }
+
+      h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to right, #61afff, #98d280);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      .tagline {
+        font-size: 1.5rem;
+        margin-bottom: 2rem;
+        color: #96969d;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+      }
+
+      .btn {
+        display: inline-block;
+        padding: 0.875rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+      }
+
+      .btn-primary {
+        background: #61afff;
+        color: #0c1018;
+        border: 1px solid #61afff;
+      }
+
+      .btn-primary:hover {
+        background: #98d280;
+        border-color: #98d280;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 30px rgba(97, 175, 255, 0.3);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #d0d0d9;
+        border: 2px solid #3f3f3f;
+      }
+
+      .btn-secondary:hover {
+        background: #32373c;
+        border-color: #636669;
+      }
+
+      .features-section {
+        background: #141518;
+        border-top: 1px solid #3f3f3f;
+        border-bottom: 1px solid #3f3f3f;
+        padding: 5rem 0;
+      }
+
+      .features {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 3rem;
+        margin-top: 3rem;
+      }
+
+      .feature {
+        text-align: center;
+        padding: 1.5rem;
+      }
+
+      .feature-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+      }
+
+      .feature h3 {
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        color: #61afff;
+      }
+
+      .feature p {
+        color: #96969d;
+        line-height: 1.7;
+      }
+
+      .section-title {
+        text-align: center;
+        font-size: 2.5rem;
+        color: #d0d0d9;
+        margin-bottom: 1rem;
+      }
+
+      .section-subtitle {
+        text-align: center;
+        color: #96969d;
+        font-size: 1.2rem;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .code-section {
+        padding: 4rem 0;
+        background: #0c1018;
+      }
+
+      .code-container {
+        max-width: 800px;
+        margin: 3rem auto 0;
+        background: #141518;
+        border-radius: 12px;
+        border: 1px solid #3f3f3f;
+        overflow: hidden;
+      }
+
+      .code-header {
+        padding: 1rem 1.5rem;
+        background: #191923;
+        border-bottom: 1px solid #3f3f3f;
+        color: #96969d;
+        font-size: 0.9rem;
+      }
+
+      pre {
+        padding: 1.5rem;
+        overflow-x: auto;
+        margin: 0;
+      }
+
+      code {
+        font-family: "Monaco", "Courier New", monospace;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: #d0d0d9;
+      }
+
+      .highlight-key {
+        color: #e18cf5;
+      }
+
+      .highlight-string {
+        color: #98d280;
+      }
+
+      .highlight-comment {
+        color: #636669;
+      }
+
+      .highlight-tag {
+        color: #61afff;
+      }
+
+      .highlight-value {
+        color: #ffe169;
+      }
+
+      footer {
+        background: #0c1018;
+        padding: 3rem 0;
+        text-align: center;
+        color: #96969d;
+        border-top: 1px solid #3f3f3f;
+      }
+
+      footer a {
+        color: #61afff;
+        text-decoration: none;
+        font-weight: 600;
+      }
+
+      footer a:hover {
+        color: #98d280;
+        text-decoration: underline;
+      }
+
+      @media (max-width: 768px) {
+        h1 {
+          font-size: 2.5rem;
+        }
+
+        .tagline {
+          font-size: 1.2rem;
+        }
+
+        .features {
+          grid-template-columns: 1fr;
+          gap: 2rem;
+        }
+
+        .cta-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="hero-background">
+      <div class="hero-accent"></div>
+    </div>
+
+    <header>
+      <div class="container">
+        <nav>
+          <a
+            href="https://github.com/starburst997/charts-library"
+            class="btn btn-secondary"
+          >
+            View on GitHub
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="hero">
+      <div class="container">
+        <h1>Charts Library</h1>
+        <p class="tagline">
+          Reusable Helm library charts for Kubernetes deployments with GitOps
+          best practices
+        </p>
+        <div class="cta-buttons">
+          <a
+            href="https://github.com/starburst997/charts-library"
+            class="btn btn-primary"
+          >
+            Get Started
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="container">
+        <h2 class="section-title">Features</h2>
+        <p class="section-subtitle">
+          Everything you need for production Kubernetes deployments
+        </p>
+
+        <div class="features">
+          <div class="feature">
+            <div class="feature-icon">🚀</div>
+            <h3>Standard Patterns</h3>
+            <p>
+              Pre-configured deployment templates following Kubernetes best
+              practices and GitOps workflows.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🔐</div>
+            <h3>Secrets Management</h3>
+            <p>
+              External Secrets integration with support for multiple secret
+              stores and automatic rotation.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🐳</div>
+            <h3>Registry Support</h3>
+            <p>
+              Built-in support for private container registries with automated
+              pull secret management.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🌐</div>
+            <h3>Ingress Ready</h3>
+            <p>
+              Nginx ingress configuration with TLS, custom timeouts, and body
+              size limits out of the box.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">📦</div>
+            <h3>Web Bundles</h3>
+            <p>
+              Complete application bundles combining deployment, service,
+              ingress, and secrets in one template.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🎯</div>
+            <h3>OCI Registry</h3>
+            <p>
+              Published to GitHub Container Registry for easy consumption and
+              version management.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="code-section">
+      <div class="container">
+        <h2 class="section-title">Complete Example</h2>
+        <p class="section-subtitle">
+          Real-world setup from the s3-mirror-sample-app
+        </p>
+
+        <div class="code-container">
+          <div class="code-header">Chart.yaml</div>
+          <pre><code><span class="highlight-key">apiVersion</span>: <span class="highlight-value">v2</span>
+<span class="highlight-key">name</span>: <span class="highlight-string">s3-mirror-sample-app</span>
+<span class="highlight-key">description</span>: <span class="highlight-string">A Helm chart for S3 Mirror Sample Application</span>
+<span class="highlight-key">type</span>: <span class="highlight-value">application</span>
+<span class="highlight-key">version</span>: <span class="highlight-value">0.0.0</span>
+<span class="highlight-key">appVersion</span>: <span class="highlight-string">"0.0.0"</span>
+<span class="highlight-key">dependencies</span>:
+  - <span class="highlight-key">name</span>: <span class="highlight-string">common</span>
+    <span class="highlight-key">version</span>: <span class="highlight-string">">=0.0.0"</span>
+    <span class="highlight-key">repository</span>: <span class="highlight-string">"oci://ghcr.io/starburst997/charts"</span></code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top: 2rem">
+          <div class="code-header">templates/common.yaml</div>
+          <pre><code><span class="highlight-tag">{{-</span> include <span class="highlight-string">"common.web"</span> . <span class="highlight-tag">-}}</span></code></pre>
+        </div>
+
+        <div class="code-container" style="margin-top: 2rem">
+          <div class="code-header">values.yaml</div>
+          <pre><code><span class="highlight-key">namespace</span>: <span class="highlight-string">s3-mirror-sample</span>
+<span class="highlight-key">replicaCount</span>: <span class="highlight-value">1</span>
+
+<span class="highlight-key">image</span>:
+  <span class="highlight-key">repository</span>: <span class="highlight-string">ghcr.io/starburst997/s3-mirror-sample-app</span>
+
+<span class="highlight-key">service</span>:
+  <span class="highlight-key">targetPort</span>: <span class="highlight-value">3000</span>
+
+<span class="highlight-key">resources</span>:
+  <span class="highlight-key">requests</span>:
+    <span class="highlight-key">cpu</span>: <span class="highlight-string">"10m"</span>
+    <span class="highlight-key">memory</span>: <span class="highlight-string">"32Mi"</span>
+  <span class="highlight-key">limits</span>:
+    <span class="highlight-key">cpu</span>: <span class="highlight-string">"250m"</span>
+    <span class="highlight-key">memory</span>: <span class="highlight-string">"128Mi"</span>
+
+<span class="highlight-key">ingress</span>:
+  <span class="highlight-key">host</span>: <span class="highlight-string">s3-mirror-sample.jd.boiv.in</span>
+  <span class="highlight-key">proxyBodySize</span>: <span class="highlight-string">"250m"</span>
+
+<span class="highlight-key">env</span>:
+  <span class="highlight-key">ENV</span>: <span class="highlight-string">"production"</span>
+  <span class="highlight-key">S3_ENDPOINT</span>: <span class="highlight-string">"https://xxxxxxxxxxxxx.r2.cloudflarestorage.com"</span>
+  <span class="highlight-key">S3_BUCKET</span>: <span class="highlight-string">"s3-mirror"</span>
+
+<span class="highlight-key">secrets</span>:
+  <span class="highlight-key">AWS_ACCESS_KEY_ID</span>: <span class="highlight-string">s3-mirror-sample-app/AWS_ACCESS_KEY_ID</span>
+  <span class="highlight-key">AWS_SECRET_ACCESS_KEY</span>: <span class="highlight-string">s3-mirror-sample-app/AWS_SECRET_ACCESS_KEY</span></code></pre>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="container">
+        <p>
+          <a href="https://github.com/starburst997/charts-library">GitHub</a> •
+          <a href="https://github.com/starburst997/charts-library/issues"
+            >Issues</a
+          >
+          •
+          <a href="https://github.com/starburst997/charts-library/releases"
+            >Releases</a
+          >
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -16,6 +16,7 @@ A Helm library chart providing reusable templates for common Kubernetes resource
 - 🌐 Ingress with nginx annotations
 - 📦 Service and namespace management
 - 🎯 Web application bundle template
+- 🔄 **Deep value merging** - Override nested values without losing defaults
 
 ## Installation
 
@@ -36,6 +37,47 @@ Update dependencies:
 helm dependency update
 ```
 
+## Deep Value Merging
+
+This library solves Helm's shallow value inheritance limitation. When you override a nested object in your app's `values.yaml`, standard Helm dependency behavior replaces the entire object, losing all default values from the library chart.
+
+**The Problem:**
+
+Library chart defaults (`charts/common/values.yaml`):
+
+```yaml
+ingress:
+  enabled: true
+  className: nginx
+  clusterIssuer: letsencrypt-http
+  host: example.com
+```
+
+Your app values (`values.yaml`) - you only want to change the host:
+
+```yaml
+ingress:
+  host: myapp.com
+```
+
+**Standard Helm behavior:** The `ingress` object is completely replaced. You lose `enabled`, `className`, and `clusterIssuer` from defaults, breaking your deployment.
+
+**With deep merging (this library):** All fields are preserved. You get `enabled: true`, `className: nginx`, `clusterIssuer: letsencrypt-http` from defaults, plus your override `host: myapp.com`.
+
+**How it works:**
+
+Each template has a `.standalone` wrapper that uses the `common.withMergedValues` helper to merge parent values with library defaults before rendering:
+
+```yaml
+{{- define "common.ingress.standalone" -}}
+{{- include "common.withMergedValues" (dict "templateName" "common.ingress" "context" .) -}}
+{{- end -}}
+```
+
+When you call `{{ include "common.web" . }}` from your app's template, it automatically detects the parent chart context, merges your values with the library's defaults, and passes the complete merged values to all templates. No configuration needed.
+
+Implementation: [`charts/common/templates/_helpers.yaml`](charts/common/templates/_helpers.yaml)
+
 ## Usage
 
 ### Web Application Bundle
@@ -44,7 +86,7 @@ Use the complete web bundle (deployment, service, ingress, secrets):
 
 ```yaml
 # templates/common.yaml
-{{ include "common.web" . }}
+{ { include "common.web" . } }
 ```
 
 ### Individual Templates
@@ -71,9 +113,25 @@ Or use individual components:
 {{ include "common.namespace" . }}
 ```
 
-## Required Values
+## Values
 
-Your `values.yaml` must include:
+Define only what you need to override. All fields have defaults in the library chart ([`charts/common/values.yaml`](charts/common/values.yaml)).
+
+**Minimal example:**
+
+```yaml
+namespace: my-app
+image:
+  repository: ghcr.io/myorg/myapp
+ingress:
+  host: myapp.example.com
+env:
+  ENV: production
+secrets:
+  API_KEY: entry/api-key
+```
+
+**Complete example with all available fields:**
 
 ```yaml
 namespace: my-app
