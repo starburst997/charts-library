@@ -210,6 +210,251 @@ image:
 # ... rest of required values
 ```
 
+## Complete Rendered Example
+
+Here's what `{{ include "common.web" . }}` generates for a real application:
+
+**Input values.yaml:**
+
+```yaml
+namespace: s3-mirror-sample
+replicaCount: 1
+
+image:
+  repository: ghcr.io/starburst997/s3-mirror-sample-app
+
+service:
+  targetPort: 3000
+
+healthCheck:
+  port: 3000
+
+resources:
+  requests:
+    cpu: "10m"
+    memory: "32Mi"
+  limits:
+    cpu: "250m"
+    memory: "128Mi"
+
+ingress:
+  host: s3-mirror-sample.jd.boiv.in
+  proxyBodySize: "250m"
+
+env:
+  ENV: "production"
+  S3_ENDPOINT: "https://xxxxxxxxx.r2.cloudflarestorage.com"
+  S3_BUCKET: "s3-mirror"
+
+secrets:
+  AWS_ACCESS_KEY_ID: s3-mirror-sample-app/AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: s3-mirror-sample-app/AWS_SECRET_ACCESS_KEY
+```
+
+**Rendered output (helm template):**
+
+<details>
+<summary>Click to expand the full rendered YAML (200+ lines)</summary>
+
+```yaml
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: s3-mirror-sample
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: s3-mirror-sample-app
+  namespace: s3-mirror-sample
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+  selector:
+    app: s3-mirror-sample-app
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: s3-mirror-sample-app
+  namespace: s3-mirror-sample
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: s3-mirror-sample-app
+  template:
+    metadata:
+      annotations:
+        reloader.stakater.com/search: "true" # Auto-reload on ConfigMap/Secret changes
+      labels:
+        app: s3-mirror-sample-app
+    spec:
+      imagePullSecrets:
+        - name: ghcr-auth
+      containers:
+        - name: app
+          image: "ghcr.io/starburst997/s3-mirror-sample-app:1.0.0"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENV
+              value: "production"
+            - name: S3_BUCKET
+              value: "s3-mirror"
+            - name: S3_ENDPOINT
+              value: "https://xxxxxxxxxx.r2.cloudflarestorage.com"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: s3-mirror-sample-app
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: s3-mirror-sample-app
+                  key: AWS_SECRET_ACCESS_KEY
+          resources:
+            limits:
+              cpu: 250m
+              memory: 128Mi
+            requests:
+              cpu: 10m
+              memory: 32Mi
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+            successThreshold: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 3000
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: s3-mirror-sample-app
+  namespace: s3-mirror-sample
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-http"
+    nginx.ingress.kubernetes.io/proxy-body-size: "250m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/keep-alive: "3600"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - s3-mirror-sample.jd.boiv.in
+      secretName: s3-mirror-sample-app-tls
+  rules:
+    - host: s3-mirror-sample.jd.boiv.in
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: s3-mirror-sample-app
+                port:
+                  number: 80
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-5"
+  name: s3-mirror-sample-app
+  namespace: s3-mirror-sample
+spec:
+  refreshInterval: "6h"
+  secretStoreRef:
+    name: onepassword
+    kind: ClusterSecretStore
+  target:
+    name: s3-mirror-sample-app
+    creationPolicy: Owner
+  data:
+    - secretKey: AWS_ACCESS_KEY_ID
+      remoteRef:
+        key: s3-mirror-sample-app
+        property: AWS_ACCESS_KEY_ID
+    - secretKey: AWS_SECRET_ACCESS_KEY
+      remoteRef:
+        key: s3-mirror-sample-app
+        property: AWS_SECRET_ACCESS_KEY
+---
+# Source: s3-mirror-sample-app/templates/common.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  annotations:
+    "helm.sh/hook": pre-install, pre-upgrade
+    "helm.sh/hook-weight": "-10"
+  name: ghcr-auth
+  namespace: s3-mirror-sample
+spec:
+  refreshInterval: "6h"
+  secretStoreRef:
+    name: onepassword
+    kind: ClusterSecretStore
+  target:
+    name: ghcr-auth
+    creationPolicy: Owner
+    template:
+      type: kubernetes.io/dockerconfigjson
+      data:
+        .dockerconfigjson: |
+          {
+            "auths": {
+              "ghcr.io": {
+                "username": "{{ .username }}",
+                "password": "{{ .token }}"
+              }
+            }
+          }
+  data:
+    - secretKey: username
+      remoteRef:
+        key: registry
+        property: GH_USERNAME
+    - secretKey: token
+      remoteRef:
+        key: registry
+        property: GH_REGISTRY_PAT
+```
+
+</details>
+
+**Key things to note:**
+
+- Single line `{{ include "common.web" . }}` generates 6 complete Kubernetes resources
+- Deep merging in action: `className: nginx`, `clusterIssuer: letsencrypt-http`, and default timeouts from library are merged with the custom `host` and `proxyBodySize`
+- Health checks automatically configured with library defaults
+- Secrets are split into two resources: application secrets and image pull secrets with different hook weights
+- Secret path notation `s3-mirror-sample-app/AWS_ACCESS_KEY_ID` parsed into `key` and `property` for External Secrets
+
 ## Development
 
 ### Publishing Charts
