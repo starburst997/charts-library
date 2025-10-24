@@ -1,0 +1,17 @@
+{{/*
+Merge default values with provided values to allow "deep merging"
+Otherwise, sub-values will get undefined if parent object is overwritten
+*/}}
+{{- define "common.values" -}}
+{{- $defaults := .Files.Get "values.yaml" | fromYaml -}}
+{{- $merged := mergeOverwrite $defaults .Values -}}
+{{- toJson $merged -}}
+{{- end -}}
+
+{{- define "common.withMergedValues" -}}
+{{- $templateName := .templateName -}}
+{{- $context := .context -}}
+{{- $values := include "common.values" $context | fromJson -}}
+{{- $ctx := dict "Values" $values "Chart" $context.Chart "Release" $context.Release "Capabilities" $context.Capabilities "Files" $context.Files -}}
+{{- include $templateName $ctx -}}
+{{- end -}}

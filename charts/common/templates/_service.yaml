@@ -1,7 +1,11 @@
 {{/*
 Standard Kubernetes Service
-Usage: {{ include "common.service" . }}
+Usage: {{ include "common.service.standalone" .Subcharts.common }}
 */}}
+{{- define "common.service.standalone" -}}
+{{- include "common.withMergedValues" (dict "templateName" "common.service" "context" .) -}}
+{{- end -}}
+
 {{- define "common.service" -}}
 apiVersion: v1
 kind: Service

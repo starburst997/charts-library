@@ -1,20 +1,18 @@
 {{/*
 Complete web application deployment bundle
 Includes: deployment, service, ingress, secrets, and image pull secrets
-Usage: {{ include "common.web" . }}
+Usage: {{ include "common.web" .Subcharts.common }}
 */}}
 {{- define "common.web" -}}
-{{ include "common.deployment" . }}
+{{ include "common.deployment.standalone" . }}
 ---
-{{ include "common.service" . }}
+{{ include "common.service.standalone" . }}
 ---
-{{- if .Values.ingress.enabled }}
-{{ include "common.ingress" . }}
+{{ include "common.ingress.standalone" . }}
 ---
-{{- end }}
-{{ include "common.externalSecret" . }}
+{{ include "common.externalSecret.standalone" . }}
 ---
-{{ include "common.imagePullSecret" . }}
+{{ include "common.imagePullSecret.standalone" . }}
 ---
-{{ include "common.namespace" . }}
+{{ include "common.namespace.standalone" . }}
 {{- end -}}

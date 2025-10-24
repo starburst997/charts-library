@@ -1,7 +1,11 @@
 {{/*
 Standard Kubernetes Namespace
-Usage: {{ include "common.namespace" . }}
+Usage: {{ include "common.namespace.standalone" .Subcharts.common }}
 */}}
+{{- define "common.namespace.standalone" -}}
+{{- include "common.withMergedValues" (dict "templateName" "common.namespace" "context" .) -}}
+{{- end -}}
+
 {{- define "common.namespace" -}}
 {{- if not (hasKey .Values "createNamespace") }}
 apiVersion: v1

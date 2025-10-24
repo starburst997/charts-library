@@ -1,7 +1,11 @@
 {{/*
 Standard Kubernetes Deployment
-Usage: {{ include "common.deployment" . }}
+Usage: {{ include "common.deployment.standalone" .Subcharts.common }}
 */}}
+{{- define "common.deployment.standalone" -}}
+{{- include "common.withMergedValues" (dict "templateName" "common.deployment" "context" .) -}}
+{{- end -}}
+
 {{- define "common.deployment" -}}
 apiVersion: apps/v1
 kind: Deployment

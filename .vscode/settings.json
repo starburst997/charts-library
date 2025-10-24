@@ -1,3 +1,9 @@
 {
-  "cSpell.words": ["dockerconfigjson", "letsencrypt"]
+  "cSpell.words": [
+    "boiv",
+    "dockerconfigjson",
+    "letsencrypt",
+    "onepassword",
+    "Subcharts"
+  ]
 }
