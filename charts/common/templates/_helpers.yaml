@@ -7,7 +7,7 @@ Otherwise, sub-values will get undefined if parent object is overwritten
 {{- $context := .context -}}
 {{- if hasKey $context "Subcharts" -}}
 {{- $merged := merge $context.Values $context.Subcharts.common.Values -}}
-{{- $ctx := dict "Values" $merged "Chart" $context.Subcharts.common.Chart "Release" $context.Release "Capabilities" $context.Capabilities "Files" $context.Subcharts.common.Files -}}
+{{- $ctx := dict "Values" $merged "Chart" $context.Chart "Release" $context.Release "Capabilities" $context.Capabilities "Files" $context.Subcharts.common.Files -}}
 {{- include $templateName $ctx -}}
 {{- else -}}
 {{- include $templateName $context -}}
