@@ -3,7 +3,7 @@ Merge default values with provided values to allow "deep merging"
 Otherwise, sub-values will get undefined if parent object is overwritten
 */}}
 {{- define "common.values" -}}
-{{- $defaults := .Files.Get "values.yaml" | fromYaml -}}
+{{- $defaults := (.Files.Get "values.yaml" | fromYaml).common -}}
 {{- $merged := mergeOverwrite $defaults .Values -}}
 {{- toJson $merged -}}
 {{- end -}}
@@ -11,7 +11,11 @@ Otherwise, sub-values will get undefined if parent object is overwritten
 {{- define "common.withMergedValues" -}}
 {{- $templateName := .templateName -}}
 {{- $context := .context -}}
-{{- $values := include "common.values" $context | fromJson -}}
-{{- $ctx := dict "Values" $values "Chart" $context.Chart "Release" $context.Release "Capabilities" $context.Capabilities "Files" $context.Files -}}
+{{- $actualContext := $context -}}
+{{- if hasKey $context "Subcharts" -}}
+{{- $actualContext = dict "Values" $context.Values "Chart" $context.Subcharts.common.Chart "Release" $context.Release "Capabilities" $context.Capabilities "Files" $context.Subcharts.common.Files -}}
+{{- end -}}
+{{- $values := include "common.values" $actualContext | fromJson -}}
+{{- $ctx := dict "Values" $values "Chart" $actualContext.Chart "Release" $actualContext.Release "Capabilities" $actualContext.Capabilities "Files" $actualContext.Files -}}
 {{- include $templateName $ctx -}}
 {{- end -}}

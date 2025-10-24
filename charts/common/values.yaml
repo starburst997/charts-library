@@ -1,57 +1,58 @@
-namespace: common
+common:
+  namespace: common
 
-replicaCount: 1
+  replicaCount: 1
 
-image:
-  repository: ghcr.io/starburst997/common
-  pullPolicy: IfNotPresent
-  tag: ""
+  image:
+    repository: ghcr.io/starburst997/common
+    pullPolicy: IfNotPresent
+    tag: ""
 
-service:
-  type: ClusterIP
-  port: 80
-  targetPort: 3000
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
 
-ingress:
-  enabled: true
-  className: nginx
-  clusterIssuer: letsencrypt-http
-  host: common.jd.boiv.in
-  proxyBodySize: "200m"
-  timeout: "3600"
-  keepAlive: "3600"
+  ingress:
+    enabled: true
+    host: common.jd.boiv.in
+    className: nginx
+    clusterIssuer: letsencrypt-http
+    proxyBodySize: "200m"
+    timeout: "3600"
+    keepAlive: "3600"
 
-resources:
-  requests:
-    cpu: "100m"
-    memory: "128Mi"
-  limits:
-    cpu: "500m"
-    memory: "256Mi"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "500m"
+      memory: "256Mi"
 
-healthCheck:
-  enabled: true
-  path: /
-  port: 3000
-  readinessInitialDelay: 5
-  livenessInitialDelay: 15
-  periodSeconds: 5
-  timeoutSeconds: 3
-  successThreshold: 5
-  failureThreshold: 3
+  healthCheck:
+    enabled: true
+    path: /
+    port: 3000
+    readinessInitialDelay: 5
+    livenessInitialDelay: 15
+    periodSeconds: 5
+    timeoutSeconds: 3
+    successThreshold: 5
+    failureThreshold: 3
 
-secretStore:
-  name: onepassword
-  kind: ClusterSecretStore
+  secretStore:
+    name: onepassword
+    kind: ClusterSecretStore
 
-imagePullSecret:
-  create: true
-  name: ghcr-auth
-  registry: ghcr.io
-  usernameKey: registry/GH_USERNAME
-  tokenKey: registry/GH_REGISTRY_PAT
-  refreshInterval: 6h
+  imagePullSecret:
+    create: true
+    name: ghcr-auth
+    registry: ghcr.io
+    usernameKey: registry/GH_USERNAME
+    tokenKey: registry/GH_REGISTRY_PAT
+    refreshInterval: 6h
 
-env: {}
+  env: {}
 
-secrets: {}
+  secrets: {}
