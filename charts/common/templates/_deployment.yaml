@@ -1,6 +1,6 @@
 {{/*
 Standard Kubernetes Deployment
-Usage: {{ include "common.deployment.standalone" .Subcharts.common }}
+Usage: {{ include "common.deployment.standalone" . }}
 */}}
 {{- define "common.deployment.standalone" -}}
 {{- include "common.withMergedValues" (dict "templateName" "common.deployment" "context" .) -}}

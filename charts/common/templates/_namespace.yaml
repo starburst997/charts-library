@@ -1,6 +1,6 @@
 {{/*
 Standard Kubernetes Namespace
-Usage: {{ include "common.namespace.standalone" .Subcharts.common }}
+Usage: {{ include "common.namespace.standalone" . }}
 */}}
 {{- define "common.namespace.standalone" -}}
 {{- include "common.withMergedValues" (dict "templateName" "common.namespace" "context" .) -}}

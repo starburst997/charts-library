@@ -1,6 +1,6 @@
 {{/*
 Standard Kubernetes Ingress with optional nginx annotations
-Usage: {{ include "common.ingress.standalone" .Subcharts.common }}
+Usage: {{ include "common.ingress.standalone" . }}
 */}}
 {{- define "common.ingress.standalone" -}}
 {{- include "common.withMergedValues" (dict "templateName" "common.ingress" "context" .) -}}

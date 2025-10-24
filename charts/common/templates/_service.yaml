@@ -1,6 +1,6 @@
 {{/*
 Standard Kubernetes Service
-Usage: {{ include "common.service.standalone" .Subcharts.common }}
+Usage: {{ include "common.service.standalone" . }}
 */}}
 {{- define "common.service.standalone" -}}
 {{- include "common.withMergedValues" (dict "templateName" "common.service" "context" .) -}}

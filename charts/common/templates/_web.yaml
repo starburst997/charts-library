@@ -1,7 +1,7 @@
 {{/*
 Complete web application deployment bundle
 Includes: deployment, service, ingress, secrets, and image pull secrets
-Usage: {{ include "common.web" .Subcharts.common }}
+Usage: {{ include "common.web" . }}
 */}}
 {{- define "common.web" -}}
 {{ include "common.deployment.standalone" . }}
