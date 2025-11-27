@@ -15,6 +15,13 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | default "letsencrypt-http" | quote }}
+    {{- if ne .Values.ingress.externalDns false }}
+    {{- if .Values.ingress.externalDnsWildcard }}
+    external-dns.alpha.kubernetes.io/hostname: {{ printf "%s,*.%s" .Values.ingress.host .Values.ingress.host | quote }}
+    {{- else }}
+    external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.host | quote }}
+    {{- end }}
+    {{- end }}
     {{- if .Values.ingress.proxyBodySize }}
     nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.ingress.proxyBodySize | quote }}
     {{- end }}
