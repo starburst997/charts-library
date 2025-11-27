@@ -20,7 +20,9 @@ spec:
   template:
     metadata:
       annotations:
+        {{- if ne .Values.reloader false }}
         reloader.stakater.com/search: "true"  # Auto-reload on ConfigMap/Secret changes
+        {{- end }}
       labels:
         app: {{ .Chart.Name }}
     spec:

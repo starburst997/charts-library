@@ -3,7 +3,9 @@
     "boiv",
     "dockerconfigjson",
     "letsencrypt",
+    "nindent",
     "onepassword",
+    "stakater",
     "Subcharts"
   ]
 }
