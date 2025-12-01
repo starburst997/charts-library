@@ -8,6 +8,15 @@ Usage: {{ include "common.ingress.standalone" . }}
 
 {{- define "common.ingress" -}}
 {{- if .Values.ingress.enabled }}
+{{- /* Rate limiting defaults - permissive values to catch abuse without affecting heavy users */}}
+{{- $rateLimitDefaults := dict "enabled" true "rpm" 600 "rps" 30 "connections" 50 "burstMultiplier" 10 "whitelist" "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" -}}
+{{- $rateLimit := merge (.Values.ingress.rateLimit | default dict) $rateLimitDefaults -}}
+{{- /* Security headers defaults */}}
+{{- $securityHeadersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" -}}
+{{- $securityHeaders := merge (.Values.ingress.securityHeaders | default dict) $securityHeadersDefaults -}}
+{{- /* SSL redirect defaults */}}
+{{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
+{{- $sslRedirect := .Values.ingress.sslRedirect | default true -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -32,6 +41,31 @@ metadata:
     {{- end }}
     {{- if .Values.ingress.keepAlive }}
     nginx.ingress.kubernetes.io/keep-alive: {{ .Values.ingress.keepAlive | quote }}
+    {{- end }}
+    {{- /* Rate limiting annotations */}}
+    {{- if $rateLimit.enabled }}
+    nginx.ingress.kubernetes.io/limit-rpm: {{ $rateLimit.rpm | quote }}
+    nginx.ingress.kubernetes.io/limit-rps: {{ $rateLimit.rps | quote }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ $rateLimit.connections | quote }}
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ $rateLimit.burstMultiplier | quote }}
+    nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
+    {{- end }}
+    {{- /* Security headers via configuration-snippet */}}
+    {{- if $securityHeaders.enabled }}
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "Strict-Transport-Security: {{ $securityHeaders.hsts }}";
+      more_set_headers "X-Frame-Options: {{ $securityHeaders.frameOptions }}";
+      more_set_headers "X-Content-Type-Options: {{ $securityHeaders.contentTypeOptions }}";
+      more_set_headers "X-XSS-Protection: {{ $securityHeaders.xssProtection }}";
+      more_set_headers "Referrer-Policy: {{ $securityHeaders.referrerPolicy }}";
+      more_set_headers "Permissions-Policy: {{ $securityHeaders.permissionsPolicy }}";
+    {{- end }}
+    {{- /* Force SSL redirect */}}
+    {{- if $forceSSLRedirect }}
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+    {{- if $sslRedirect }}
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
     {{- end }}
 spec:
   ingressClassName: {{ .Values.ingress.className }}

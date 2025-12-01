@@ -20,6 +20,39 @@ ingress:
   proxyBodySize: "200m"
   timeout: "3600"
   keepAlive: "3600"
+  # Rate limiting - protects against abuse and DDoS attacks
+  # Defaults are permissive to avoid false positives on heavy users
+  rateLimit:
+    enabled: true
+    # Requests per minute per IP (600 = 10/sec average, generous for browsing)
+    rpm: 600
+    # Requests per second per IP (30 allows page loads with many assets)
+    rps: 30
+    # Concurrent connections per IP (50 handles browser parallel requests)
+    connections: 50
+    # Burst multiplier (10x allows spiky traffic patterns)
+    burstMultiplier: 10
+    # Whitelist CIDRs excluded from rate limiting (internal networks)
+    whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+  # Security headers - protects against common web vulnerabilities
+  securityHeaders:
+    enabled: true
+    # Strict-Transport-Security (HSTS) - forces HTTPS
+    hsts: "max-age=31536000; includeSubDomains; preload"
+    # X-Frame-Options - prevents clickjacking
+    frameOptions: "SAMEORIGIN"
+    # X-Content-Type-Options - prevents MIME sniffing
+    contentTypeOptions: "nosniff"
+    # X-XSS-Protection - enables browser XSS filter
+    xssProtection: "1; mode=block"
+    # Referrer-Policy - controls referrer information
+    referrerPolicy: "strict-origin-when-cross-origin"
+    # Permissions-Policy - controls browser features (formerly Feature-Policy)
+    permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+  # Force HTTPS redirect
+  forceSSLRedirect: true
+  # SSL/TLS configuration
+  sslRedirect: true
 
 resources:
   requests:

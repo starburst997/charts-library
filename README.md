@@ -14,6 +14,8 @@ A Helm library chart providing reusable templates for common Kubernetes resource
 - 🔐 External Secrets integration
 - 🐳 Private registry support (imagePullSecrets)
 - 🌐 Ingress with nginx annotations
+- 🛡️ **Rate limiting** - Built-in DDoS protection (enabled by default)
+- 🔒 **Security headers** - HSTS, XSS protection, clickjacking prevention (enabled by default)
 - 📦 Service and namespace management
 - 🎯 Web application bundle template
 - 🔄 **Deep value merging** - Override nested values without losing defaults
@@ -77,6 +79,87 @@ Each template has a `.standalone` wrapper that uses the `common.withMergedValues
 When you call `{{ include "common.web" . }}` from your app's template, it automatically detects the parent chart context, merges your values with the library's defaults, and passes the complete merged values to all templates. No configuration needed.
 
 Implementation: [`charts/common/templates/_helpers.yaml`](charts/common/templates/_helpers.yaml)
+
+## Rate Limiting
+
+Rate limiting is **enabled by default** to protect your applications from abuse and DDoS attacks. It limits requests per IP address using nginx ingress annotations.
+
+**Default configuration (permissive to avoid false positives):**
+
+- 30 requests per second per IP (allows page loads with many assets)
+- 600 requests per minute per IP (10/sec average)
+- 50 concurrent connections per IP (handles browser parallel requests)
+- Burst multiplier of 10x (allows spiky traffic patterns)
+- Internal networks whitelisted by default (`10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`)
+- Returns HTTP 503 when limit is exceeded
+
+**Configuration options:**
+
+```yaml
+ingress:
+  rateLimit:
+    enabled: true # Toggle rate limiting (default: true)
+    rpm: 600 # Requests per minute per IP
+    rps: 30 # Requests per second per IP
+    connections: 50 # Concurrent connections per IP
+    burstMultiplier: 10 # Burst size multiplier (default: 10)
+    whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" # CIDRs excluded
+```
+
+**To disable rate limiting:**
+
+```yaml
+ingress:
+  rateLimit:
+    enabled: false
+```
+
+**Important notes:**
+
+- Rate limits are applied **per nginx ingress controller replica**. If you run 3 replicas, effective limit is 3x the configured value.
+- Internal Kubernetes networks are whitelisted by default to allow pod-to-pod communication.
+- Monitor your traffic patterns to tune these values appropriately.
+
+## Security Headers
+
+Security headers are **enabled by default** to protect against common web vulnerabilities including XSS, clickjacking, and MIME sniffing attacks.
+
+**Default headers applied:**
+
+| Header | Default Value | Protection |
+|--------|---------------|------------|
+| `Strict-Transport-Security` | `max-age=31536000; includeSubDomains; preload` | Forces HTTPS for 1 year |
+| `X-Frame-Options` | `SAMEORIGIN` | Prevents clickjacking |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME sniffing |
+| `X-XSS-Protection` | `1; mode=block` | Enables browser XSS filter |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Controls referrer information |
+| `Permissions-Policy` | `geolocation=(), microphone=(), camera=()` | Disables sensitive browser features |
+
+**Configuration options:**
+
+```yaml
+ingress:
+  securityHeaders:
+    enabled: true # Toggle security headers (default: true)
+    hsts: "max-age=31536000; includeSubDomains; preload"
+    frameOptions: "SAMEORIGIN" # or "DENY" for stricter
+    contentTypeOptions: "nosniff"
+    xssProtection: "1; mode=block"
+    referrerPolicy: "strict-origin-when-cross-origin"
+    permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+  forceSSLRedirect: true # Forces HTTPS redirect (default: true)
+  sslRedirect: true # SSL redirect (default: true)
+```
+
+**To disable security headers:**
+
+```yaml
+ingress:
+  securityHeaders:
+    enabled: false
+```
+
+**Note:** Security headers use nginx `configuration-snippet` annotation. Ensure your nginx ingress controller has `allow-snippet-annotations: "true"` in its ConfigMap (enabled by default in most installations).
 
 ## Usage
 
@@ -155,6 +238,23 @@ ingress:
   proxyBodySize: "200m" # optional
   timeout: "3600" # optional
   keepAlive: "3600" # optional
+  rateLimit:
+    enabled: true # Rate limiting enabled by default
+    rpm: 600 # Requests per minute per IP
+    rps: 30 # Requests per second per IP
+    connections: 50 # Concurrent connections per IP
+    burstMultiplier: 10 # Burst multiplier (default 10)
+    whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+  securityHeaders:
+    enabled: true # Security headers enabled by default
+    hsts: "max-age=31536000; includeSubDomains; preload"
+    frameOptions: "SAMEORIGIN"
+    contentTypeOptions: "nosniff"
+    xssProtection: "1; mode=block"
+    referrerPolicy: "strict-origin-when-cross-origin"
+    permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+  forceSSLRedirect: true
+  sslRedirect: true
 
 resources:
   requests:

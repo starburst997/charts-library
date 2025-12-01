@@ -347,6 +347,24 @@
           </div>
 
           <div class="feature">
+            <div class="feature-icon">🛡️</div>
+            <h3>Rate Limiting</h3>
+            <p>
+              Built-in DDoS protection with configurable request limits per IP.
+              Enabled by default for production safety.
+            </p>
+          </div>
+
+          <div class="feature">
+            <div class="feature-icon">🔒</div>
+            <h3>Security Headers</h3>
+            <p>
+              HSTS, XSS protection, clickjacking prevention, and more.
+              Production-ready security headers enabled by default.
+            </p>
+          </div>
+
+          <div class="feature">
             <div class="feature-icon">📦</div>
             <h3>Web Bundles</h3>
             <p>
@@ -415,6 +433,12 @@
 <span class="highlight-key">ingress</span>:
   <span class="highlight-key">host</span>: <span class="highlight-string">s3-mirror-sample.jd.boiv.in</span>
   <span class="highlight-key">proxyBodySize</span>: <span class="highlight-string">"250m"</span>
+  <span class="highlight-key">rateLimit</span>:
+    <span class="highlight-key">enabled</span>: <span class="highlight-value">true</span>       <span class="highlight-comment"># DDoS protection (default)</span>
+    <span class="highlight-key">rps</span>: <span class="highlight-value">30</span>            <span class="highlight-comment"># Requests per second per IP</span>
+    <span class="highlight-key">connections</span>: <span class="highlight-value">50</span>    <span class="highlight-comment"># Concurrent connections per IP</span>
+  <span class="highlight-key">securityHeaders</span>:
+    <span class="highlight-key">enabled</span>: <span class="highlight-value">true</span>       <span class="highlight-comment"># Security headers (default)</span>
 
 <span class="highlight-key">env</span>:
   <span class="highlight-key">ENV</span>: <span class="highlight-string">"production"</span>
