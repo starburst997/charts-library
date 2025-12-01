@@ -16,11 +16,17 @@ Usage: {{ include "common.ingress.standalone" . }}
 {{- $timeout := .Values.ingress.timeout | default "3600" -}}
 {{- $keepAlive := .Values.ingress.keepAlive | default "3600" -}}
 {{- /* Rate limiting defaults - permissive values to catch abuse without affecting heavy users */}}
-{{- $rateLimitDefaults := dict "enabled" true "rpm" 600 "rps" 30 "connections" 50 "burstMultiplier" 10 "whitelist" "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" -}}
+{{- $rateLimitDefaults := dict
+    "enabled" true
+    "rpm" 600
+    "rps" 30
+    "connections" 50
+    "burstMultiplier" 10
+    "whitelist" "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+-}}
 {{- $rateLimit := merge (.Values.ingress.rateLimit | default dict) $rateLimitDefaults -}}
-{{- /* Headers defaults */}}
-{{- $headersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
-{{- $headers := merge (.Values.ingress.headers | default dict) $headersDefaults -}}
+{{- /* Headers enabled check (defaults handled in _headers.yaml ConfigMap) */}}
+{{- $headersEnabled := (.Values.ingress.headers).enabled | default true -}}
 {{- /* SSL redirect defaults */}}
 {{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
 {{- $sslRedirect := .Values.ingress.sslRedirect | default true -}}
@@ -60,7 +66,7 @@ metadata:
     nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
     {{- end }}
     {{- /* Headers via ConfigMap reference */}}
-    {{- if $headers.enabled }}
+    {{- if $headersEnabled }}
     nginx.ingress.kubernetes.io/custom-headers: {{ .Values.namespace }}/{{ .Chart.Name }}-headers
     {{- end }}
     {{- /* Force SSL redirect */}}

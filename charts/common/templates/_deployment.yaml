@@ -15,7 +15,10 @@ Usage: {{ include "common.deployment.standalone" . }}
 {{- $imagePullSecretCreate := (.Values.imagePullSecret).create | default true -}}
 {{- $imagePullSecretName := (.Values.imagePullSecret).name | default "ghcr-auth" -}}
 {{- /* Resource defaults */}}
-{{- $resourceDefaults := dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "cpu" "500m" "memory" "256Mi") -}}
+{{- $resourceDefaults := dict
+    "requests" (dict "cpu" "100m" "memory" "128Mi")
+    "limits" (dict "cpu" "500m" "memory" "256Mi")
+-}}
 {{- $resources := merge (.Values.resources | default dict) $resourceDefaults -}}
 apiVersion: apps/v1
 kind: Deployment

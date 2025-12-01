@@ -9,7 +9,16 @@ Usage: {{ include "common.headers.standalone" . }}
 {{- define "common.headers" -}}
 {{- $ingressEnabled := .Values.ingress.enabled | default true -}}
 {{- /* Headers defaults */}}
-{{- $headersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
+{{- $headersDefaults := dict
+    "enabled" true
+    "hsts" "max-age=31536000; includeSubDomains; preload"
+    "frameOptions" "SAMEORIGIN"
+    "contentTypeOptions" "nosniff"
+    "xssProtection" "1; mode=block"
+    "referrerPolicy" "strict-origin-when-cross-origin"
+    "permissionsPolicy" "geolocation=(), microphone=(), camera=()"
+    "contentSecurityPolicy" ""
+-}}
 {{- $headers := merge (.Values.ingress.headers | default dict) $headersDefaults -}}
 {{- if and $ingressEnabled $headers.enabled }}
 apiVersion: v1
