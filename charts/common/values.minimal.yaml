@@ -1,0 +1,21 @@
+namespace: s3-mirror-sample
+replicaCount: 1
+
+image:
+  repository: ghcr.io/starburst997/s3-mirror-sample-app
+
+service:
+  targetPort: 3000
+
+ingress:
+  host: s3-mirror-sample.jd.boiv.in
+  proxyBodySize: "250m"
+
+env:
+  ENV: "production"
+  S3_ENDPOINT: "https://b42d2037779b12f46098fa4928e44eaf.r2.cloudflarestorage.com"
+  S3_BUCKET: "s3-mirror"
+
+secrets:
+  AWS_ACCESS_KEY_ID: s3-mirror-sample-app/AWS_ACCESS_KEY_ID
+  AWS_SECRET_ACCESS_KEY: s3-mirror-sample-app/AWS_SECRET_ACCESS_KEY
