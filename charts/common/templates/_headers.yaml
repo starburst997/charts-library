@@ -1,0 +1,31 @@
+{{/*
+ConfigMap for nginx headers
+Usage: {{ include "common.headers.standalone" . }}
+*/}}
+{{- define "common.headers.standalone" -}}
+{{- include "common.withMergedValues" (dict "templateName" "common.headers" "context" .) -}}
+{{- end -}}
+
+{{- define "common.headers" -}}
+{{- $ingressEnabled := .Values.ingress.enabled | default true -}}
+{{- /* Headers defaults */}}
+{{- $headersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
+{{- $headers := merge (.Values.ingress.headers | default dict) $headersDefaults -}}
+{{- if and $ingressEnabled $headers.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Chart.Name }}-headers
+  namespace: {{ .Values.namespace }}
+data:
+  Strict-Transport-Security: {{ $headers.hsts | quote }}
+  X-Frame-Options: {{ $headers.frameOptions | quote }}
+  X-Content-Type-Options: {{ $headers.contentTypeOptions | quote }}
+  X-XSS-Protection: {{ $headers.xssProtection | quote }}
+  Referrer-Policy: {{ $headers.referrerPolicy | quote }}
+  Permissions-Policy: {{ $headers.permissionsPolicy | quote }}
+  {{- if $headers.contentSecurityPolicy }}
+  Content-Security-Policy: {{ $headers.contentSecurityPolicy | quote }}
+  {{- end }}
+{{- end }}
+{{- end -}}

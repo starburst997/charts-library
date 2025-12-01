@@ -93,10 +93,10 @@ ingress:
     whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
 
   # ---------------------------------------------------------------------------
-  # Security Headers - Protects against common web vulnerabilities
-  # All headers are enabled by default for production safety
+  # Headers - HTTP response headers (security headers enabled by default)
+  # All security headers are enabled by default for production safety
   # ---------------------------------------------------------------------------
-  securityHeaders:
+  headers:
     # -- Enable/disable security headers
     enabled: true
     # -- HSTS: Forces HTTPS for 1 year, includes subdomains, enables preload

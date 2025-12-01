@@ -18,9 +18,9 @@ Usage: {{ include "common.ingress.standalone" . }}
 {{- /* Rate limiting defaults - permissive values to catch abuse without affecting heavy users */}}
 {{- $rateLimitDefaults := dict "enabled" true "rpm" 600 "rps" 30 "connections" 50 "burstMultiplier" 10 "whitelist" "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" -}}
 {{- $rateLimit := merge (.Values.ingress.rateLimit | default dict) $rateLimitDefaults -}}
-{{- /* Security headers defaults */}}
-{{- $securityHeadersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
-{{- $securityHeaders := merge (.Values.ingress.securityHeaders | default dict) $securityHeadersDefaults -}}
+{{- /* Headers defaults */}}
+{{- $headersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
+{{- $headers := merge (.Values.ingress.headers | default dict) $headersDefaults -}}
 {{- /* SSL redirect defaults */}}
 {{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
 {{- $sslRedirect := .Values.ingress.sslRedirect | default true -}}
@@ -59,18 +59,9 @@ metadata:
     nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ $rateLimit.burstMultiplier | quote }}
     nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
     {{- end }}
-    {{- /* Configuration snippet for security headers */}}
-    {{- if $securityHeaders.enabled }}
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: {{ $securityHeaders.hsts }}";
-      more_set_headers "X-Frame-Options: {{ $securityHeaders.frameOptions }}";
-      more_set_headers "X-Content-Type-Options: {{ $securityHeaders.contentTypeOptions }}";
-      more_set_headers "X-XSS-Protection: {{ $securityHeaders.xssProtection }}";
-      more_set_headers "Referrer-Policy: {{ $securityHeaders.referrerPolicy }}";
-      more_set_headers "Permissions-Policy: {{ $securityHeaders.permissionsPolicy }}";
-      {{- if $securityHeaders.contentSecurityPolicy }}
-      more_set_headers "Content-Security-Policy: {{ $securityHeaders.contentSecurityPolicy }}";
-      {{- end }}
+    {{- /* Headers via ConfigMap reference */}}
+    {{- if $headers.enabled }}
+    nginx.ingress.kubernetes.io/custom-headers: {{ .Values.namespace }}/{{ .Chart.Name }}-headers
     {{- end }}
     {{- /* Force SSL redirect */}}
     {{- if $forceSSLRedirect }}
@@ -118,9 +109,19 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | default "letsencrypt-http" | quote }}
+    {{- if ne .Values.ingress.externalDns false }}
+    external-dns.alpha.kubernetes.io/hostname: {{ $nonWWWHost | quote }}
+    {{- end }}
     nginx.ingress.kubernetes.io/permanent-redirect: "https://{{ $wwwHost }}$request_uri"
     {{- if $forceSSLRedirect }}
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+    {{- if $rateLimit.enabled }}
+    nginx.ingress.kubernetes.io/limit-rpm: {{ $rateLimit.rpm | quote }}
+    nginx.ingress.kubernetes.io/limit-rps: {{ $rateLimit.rps | quote }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ $rateLimit.connections | quote }}
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ $rateLimit.burstMultiplier | quote }}
+    nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
     {{- end }}
 spec:
   ingressClassName: {{ $className }}
@@ -150,9 +151,19 @@ metadata:
   namespace: {{ .Values.namespace }}
   annotations:
     cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | default "letsencrypt-http" | quote }}
+    {{- if ne .Values.ingress.externalDns false }}
+    external-dns.alpha.kubernetes.io/hostname: {{ $wwwHost | quote }}
+    {{- end }}
     nginx.ingress.kubernetes.io/permanent-redirect: "https://{{ $nonWWWHost }}$request_uri"
     {{- if $forceSSLRedirect }}
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+    {{- if $rateLimit.enabled }}
+    nginx.ingress.kubernetes.io/limit-rpm: {{ $rateLimit.rpm | quote }}
+    nginx.ingress.kubernetes.io/limit-rps: {{ $rateLimit.rps | quote }}
+    nginx.ingress.kubernetes.io/limit-connections: {{ $rateLimit.connections | quote }}
+    nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ $rateLimit.burstMultiplier | quote }}
+    nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
     {{- end }}
 spec:
   ingressClassName: {{ $className }}

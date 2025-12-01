@@ -1,6 +1,6 @@
 {{/*
 Complete web application deployment bundle
-Includes: deployment, service, ingress, secrets, and image pull secrets
+Includes: deployment, service, ingress, secrets, image pull secrets, and security headers
 Usage: {{ include "common.web" . }}
 */}}
 {{- define "common.web" -}}
@@ -9,6 +9,8 @@ Usage: {{ include "common.web" . }}
 {{ include "common.service.standalone" . }}
 ---
 {{ include "common.ingress.standalone" . }}
+---
+{{ include "common.headers.standalone" . }}
 ---
 {{ include "common.externalSecret.standalone" . }}
 ---
