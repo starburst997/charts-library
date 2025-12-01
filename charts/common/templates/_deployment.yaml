@@ -9,6 +9,7 @@ Usage: {{ include "common.deployment.standalone" . }}
 {{- define "common.deployment" -}}
 {{- /* Deployment defaults */}}
 {{- $replicaCount := .Values.replicaCount | default 1 -}}
+{{- $revisionHistoryLimit := .Values.revisionHistoryLimit | default 5 -}}
 {{- $pullPolicy := .Values.image.pullPolicy | default "IfNotPresent" -}}
 {{- $targetPort := .Values.service.targetPort | default 3000 -}}
 {{- $imagePullSecretCreate := (.Values.imagePullSecret).create | default true -}}
@@ -23,6 +24,7 @@ metadata:
   namespace: {{ .Values.namespace }}
 spec:
   replicas: {{ $replicaCount }}
+  revisionHistoryLimit: {{ $revisionHistoryLimit }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}

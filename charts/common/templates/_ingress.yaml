@@ -24,6 +24,14 @@ Usage: {{ include "common.ingress.standalone" . }}
 {{- /* SSL redirect defaults */}}
 {{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
 {{- $sslRedirect := .Values.ingress.sslRedirect | default true -}}
+{{- /* WWW redirect defaults - these create separate ingress resources */}}
+{{- $forceWWW := .Values.ingress.forceWWW | default false -}}
+{{- $forceNonWWW := .Values.ingress.forceNonWWW | default false -}}
+{{- /* Determine hosts for www handling */}}
+{{- $host := .Values.ingress.host -}}
+{{- $hostHasWWW := hasPrefix "www." $host -}}
+{{- $wwwHost := ternary $host (printf "www.%s" $host) $hostHasWWW -}}
+{{- $nonWWWHost := ternary (trimPrefix "www." $host) $host $hostHasWWW -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -51,7 +59,7 @@ metadata:
     nginx.ingress.kubernetes.io/limit-burst-multiplier: {{ $rateLimit.burstMultiplier | quote }}
     nginx.ingress.kubernetes.io/limit-whitelist: {{ $rateLimit.whitelist | quote }}
     {{- end }}
-    {{- /* Security headers via configuration-snippet */}}
+    {{- /* Configuration snippet for security headers */}}
     {{- if $securityHeaders.enabled }}
     nginx.ingress.kubernetes.io/configuration-snippet: |
       more_set_headers "Strict-Transport-Security: {{ $securityHeaders.hsts }}";
@@ -75,10 +83,22 @@ spec:
   ingressClassName: {{ $className }}
   tls:
     - hosts:
-        - {{ .Values.ingress.host }}
+        {{- if $forceWWW }}
+        - {{ $wwwHost }}
+        {{- else if $forceNonWWW }}
+        - {{ $nonWWWHost }}
+        {{- else }}
+        - {{ $host }}
+        {{- end }}
       secretName: {{ .Chart.Name }}-tls
   rules:
-    - host: {{ .Values.ingress.host }}
+    {{- if $forceWWW }}
+    - host: {{ $wwwHost }}
+    {{- else if $forceNonWWW }}
+    - host: {{ $nonWWWHost }}
+    {{- else }}
+    - host: {{ $host }}
+    {{- end }}
       http:
         paths:
           - path: /
@@ -88,5 +108,69 @@ spec:
                 name: {{ .Chart.Name }}
                 port:
                   number: {{ $servicePort }}
+{{- /* Redirect ingress for forceWWW: redirects non-www to www */}}
+{{- if $forceWWW }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Chart.Name }}-redirect
+  namespace: {{ .Values.namespace }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | default "letsencrypt-http" | quote }}
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://{{ $wwwHost }}$request_uri"
+    {{- if $forceSSLRedirect }}
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+spec:
+  ingressClassName: {{ $className }}
+  tls:
+    - hosts:
+        - {{ $nonWWWHost }}
+      secretName: {{ .Chart.Name }}-redirect-tls
+  rules:
+    - host: {{ $nonWWWHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Chart.Name }}
+                port:
+                  number: {{ $servicePort }}
+{{- end }}
+{{- /* Redirect ingress for forceNonWWW: redirects www to non-www */}}
+{{- if $forceNonWWW }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Chart.Name }}-redirect
+  namespace: {{ .Values.namespace }}
+  annotations:
+    cert-manager.io/cluster-issuer: {{ .Values.ingress.clusterIssuer | default "letsencrypt-http" | quote }}
+    nginx.ingress.kubernetes.io/permanent-redirect: "https://{{ $nonWWWHost }}$request_uri"
+    {{- if $forceSSLRedirect }}
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    {{- end }}
+spec:
+  ingressClassName: {{ $className }}
+  tls:
+    - hosts:
+        - {{ $wwwHost }}
+      secretName: {{ .Chart.Name }}-redirect-tls
+  rules:
+    - host: {{ $wwwHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Chart.Name }}
+                port:
+                  number: {{ $servicePort }}
+{{- end }}
 {{- end }}
 {{- end -}}

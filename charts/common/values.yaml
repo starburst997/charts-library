@@ -12,6 +12,9 @@ namespace: my-app
 # -- Number of pod replicas for the deployment
 replicaCount: 1
 
+# -- Number of old ReplicaSets to retain for rollback (saves cluster resources)
+revisionHistoryLimit: 5
+
 # -- Enable/disable Reloader annotation for auto-reload on secret changes
 reloader: true
 
@@ -66,6 +69,10 @@ ingress:
   forceSSLRedirect: true
   # -- Enable SSL redirect
   sslRedirect: true
+  # -- Force non-www to www redirect (creates separate redirect ingress)
+  forceWWW: false
+  # -- Force www to non-www redirect (creates separate redirect ingress)
+  forceNonWWW: false
 
   # ---------------------------------------------------------------------------
   # Rate Limiting - Protects against abuse and DDoS attacks
@@ -118,11 +125,15 @@ resources:
     cpu: "100m"
     # -- Minimum memory required (Mi = mebibytes)
     memory: "128Mi"
+    # -- Minimum ephemeral storage (optional, for apps writing temp files)
+    # ephemeral-storage: "100Mi"
   limits:
     # -- Maximum CPU allowed
     cpu: "500m"
     # -- Maximum memory allowed
     memory: "256Mi"
+    # -- Maximum ephemeral storage (optional, prevents disk exhaustion)
+    # ephemeral-storage: "1Gi"
 
 # =============================================================================
 # Health Check Configuration
