@@ -1,90 +1,218 @@
-namespace: common
+# =============================================================================
+# Common Helm Library Chart - Default Values
+# =============================================================================
+# This file documents ALL available values with their defaults.
+# When using this library, you only need to override values you want to change.
+# All defaults are embedded in the templates, so they apply automatically.
+# =============================================================================
 
+# -- Kubernetes namespace for all resources
+namespace: my-app
+
+# -- Number of pod replicas for the deployment
 replicaCount: 1
 
-image:
-  repository: ghcr.io/starburst997/common
-  pullPolicy: IfNotPresent
-  tag: ""
+# -- Enable/disable Reloader annotation for auto-reload on secret changes
+reloader: true
 
+# =============================================================================
+# Container Image Configuration
+# =============================================================================
+image:
+  # -- Container image repository (required)
+  repository: ghcr.io/myorg/myapp
+  # -- Image pull policy: Always, IfNotPresent, or Never
+  pullPolicy: IfNotPresent
+  # -- Image tag (defaults to Chart.AppVersion if empty)
+  tag: ""
+  # -- Additional imagePullSecrets (list of secret names)
+  # pullSecrets:
+  #   - name: my-registry-secret
+
+# =============================================================================
+# Service Configuration
+# =============================================================================
 service:
+  # -- Kubernetes service type: ClusterIP, NodePort, or LoadBalancer
   type: ClusterIP
+  # -- Service port (external)
   port: 80
+  # -- Container port (internal) - your app listens on this port
   targetPort: 3000
 
+# =============================================================================
+# Ingress Configuration
+# =============================================================================
 ingress:
+  # -- Enable/disable ingress resource creation
   enabled: true
-  host: common.jd.boiv.in
+  # -- Hostname for the ingress (required if enabled)
+  host: myapp.example.com
+  # -- Ingress class name
   className: nginx
+  # -- cert-manager cluster issuer for TLS certificates
   clusterIssuer: letsencrypt-http
+  # -- Enable external-dns annotation for automatic DNS records
+  externalDns: true
+  # -- Enable wildcard DNS record (*.host in addition to host)
+  externalDnsWildcard: false
+  # -- Maximum allowed request body size (e.g., file uploads)
   proxyBodySize: "200m"
+  # -- Proxy timeout in seconds for long-running requests
   timeout: "3600"
+  # -- Keep-alive timeout in seconds
   keepAlive: "3600"
-  # Rate limiting - protects against abuse and DDoS attacks
-  # Defaults are permissive to avoid false positives on heavy users
-  rateLimit:
-    enabled: true
-    # Requests per minute per IP (600 = 10/sec average, generous for browsing)
-    rpm: 600
-    # Requests per second per IP (30 allows page loads with many assets)
-    rps: 30
-    # Concurrent connections per IP (50 handles browser parallel requests)
-    connections: 50
-    # Burst multiplier (10x allows spiky traffic patterns)
-    burstMultiplier: 10
-    # Whitelist CIDRs excluded from rate limiting (internal networks)
-    whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
-  # Security headers - protects against common web vulnerabilities
-  securityHeaders:
-    enabled: true
-    # Strict-Transport-Security (HSTS) - forces HTTPS
-    hsts: "max-age=31536000; includeSubDomains; preload"
-    # X-Frame-Options - prevents clickjacking
-    frameOptions: "SAMEORIGIN"
-    # X-Content-Type-Options - prevents MIME sniffing
-    contentTypeOptions: "nosniff"
-    # X-XSS-Protection - enables browser XSS filter
-    xssProtection: "1; mode=block"
-    # Referrer-Policy - controls referrer information
-    referrerPolicy: "strict-origin-when-cross-origin"
-    # Permissions-Policy - controls browser features (formerly Feature-Policy)
-    permissionsPolicy: "geolocation=(), microphone=(), camera=()"
-  # Force HTTPS redirect
+  # -- Force HTTP to HTTPS redirect
   forceSSLRedirect: true
-  # SSL/TLS configuration
+  # -- Enable SSL redirect
   sslRedirect: true
 
+  # ---------------------------------------------------------------------------
+  # Rate Limiting - Protects against abuse and DDoS attacks
+  # Defaults are permissive to avoid false positives on heavy users
+  # ---------------------------------------------------------------------------
+  rateLimit:
+    # -- Enable/disable rate limiting
+    enabled: true
+    # -- Max requests per minute per IP (600 = 10/sec average)
+    rpm: 600
+    # -- Max requests per second per IP (allows page loads with many assets)
+    rps: 30
+    # -- Max concurrent connections per IP (handles browser parallel requests)
+    connections: 50
+    # -- Burst multiplier (10x allows spiky traffic patterns)
+    burstMultiplier: 10
+    # -- CIDR ranges excluded from rate limiting (internal k8s networks)
+    whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+
+  # ---------------------------------------------------------------------------
+  # Security Headers - Protects against common web vulnerabilities
+  # All headers are enabled by default for production safety
+  # ---------------------------------------------------------------------------
+  securityHeaders:
+    # -- Enable/disable security headers
+    enabled: true
+    # -- HSTS: Forces HTTPS for 1 year, includes subdomains, enables preload
+    hsts: "max-age=31536000; includeSubDomains; preload"
+    # -- X-Frame-Options: Prevents clickjacking (SAMEORIGIN or DENY)
+    frameOptions: "SAMEORIGIN"
+    # -- X-Content-Type-Options: Prevents MIME type sniffing attacks
+    contentTypeOptions: "nosniff"
+    # -- X-XSS-Protection: Enables browser XSS filter (legacy, but still useful)
+    xssProtection: "1; mode=block"
+    # -- Referrer-Policy: Controls referrer info sent to other sites
+    referrerPolicy: "strict-origin-when-cross-origin"
+    # -- Permissions-Policy: Disables sensitive browser APIs (camera, mic, etc.)
+    permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+    # -- Content-Security-Policy: Controls allowed content sources (app-specific)
+    # CSP is empty by default because it's application-specific and can break sites
+    # Example: "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com"
+    contentSecurityPolicy: ""
+
+# =============================================================================
+# Resource Limits and Requests
+# =============================================================================
 resources:
   requests:
+    # -- Minimum CPU required (m = millicores)
     cpu: "100m"
+    # -- Minimum memory required (Mi = mebibytes)
     memory: "128Mi"
   limits:
+    # -- Maximum CPU allowed
     cpu: "500m"
+    # -- Maximum memory allowed
     memory: "256Mi"
 
+# =============================================================================
+# Health Check Configuration
+# Auto-generates readiness and liveness probes if not custom defined
+# =============================================================================
 healthCheck:
+  # -- Enable/disable auto-generated health checks
   enabled: true
+  # -- Health check endpoint path
   path: /
-  port: 3000
+  # -- Health check port (defaults to service.targetPort if not set)
+  # port: 3000
+  # -- Seconds to wait before starting readiness checks
   readinessInitialDelay: 5
+  # -- Seconds to wait before starting liveness checks
   livenessInitialDelay: 15
+  # -- Seconds between health check probes
   periodSeconds: 5
+  # -- Seconds to wait for probe response before timeout
   timeoutSeconds: 3
-  successThreshold: 5
+  # -- Consecutive successes needed to mark as healthy
+  successThreshold: 1
+  # -- Consecutive failures needed to mark as unhealthy
   failureThreshold: 3
+  # -- Override successThreshold for readiness probe only
+  # readinessSuccessThreshold: 1
+  # -- Override failureThreshold for readiness probe only
+  # readinessFailureThreshold: 3
+  # -- Override failureThreshold for liveness probe only
+  # livenessFailureThreshold: 3
 
+# -- Custom readiness probe (overrides auto-generated)
+# readinessProbe:
+#   httpGet:
+#     path: /health
+#     port: 3000
+#   initialDelaySeconds: 5
+#   periodSeconds: 10
+
+# -- Custom liveness probe (overrides auto-generated)
+# livenessProbe:
+#   httpGet:
+#     path: /health
+#     port: 3000
+#   initialDelaySeconds: 15
+#   periodSeconds: 20
+
+# =============================================================================
+# External Secrets Configuration
+# Integrates with External Secrets Operator for secret management
+# =============================================================================
 secretStore:
+  # -- Name of the ClusterSecretStore or SecretStore
   name: onepassword
+  # -- Kind: ClusterSecretStore (cluster-wide) or SecretStore (namespaced)
   kind: ClusterSecretStore
 
+# =============================================================================
+# Image Pull Secret Configuration
+# Creates an ExternalSecret for private container registry authentication
+# =============================================================================
 imagePullSecret:
+  # -- Enable/disable image pull secret creation
   create: true
+  # -- Name of the generated Kubernetes secret
   name: ghcr-auth
+  # -- Container registry URL
   registry: ghcr.io
+  # -- Secret store path for registry username (supports path/property format)
   usernameKey: registry/GH_USERNAME
+  # -- Secret store path for registry token/password
   tokenKey: registry/GH_REGISTRY_PAT
+  # -- How often to refresh the secret from the store
   refreshInterval: 6h
 
+# =============================================================================
+# Environment Variables
+# Key-value pairs added as container environment variables
+# =============================================================================
 env: {}
+  # ENV: "production"
+  # API_URL: "https://api.example.com"
 
+# =============================================================================
+# Application Secrets
+# Maps env var names to External Secrets paths
+# Supports two formats:
+#   - Simple: SECRET_KEY: entry-name (references entire entry)
+#   - Path:   SECRET_KEY: entry/property (references specific property)
+# =============================================================================
 secrets: {}
+  # API_KEY: myapp/API_KEY
+  # DATABASE_URL: myapp/DATABASE_URL

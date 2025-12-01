@@ -7,16 +7,20 @@ Usage: {{ include "common.service.standalone" . }}
 {{- end -}}
 
 {{- define "common.service" -}}
+{{- /* Service defaults */}}
+{{- $serviceType := .Values.service.type | default "ClusterIP" -}}
+{{- $servicePort := .Values.service.port | default 80 -}}
+{{- $targetPort := .Values.service.targetPort | default 3000 -}}
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ .Chart.Name }}
   namespace: {{ .Values.namespace }}
 spec:
-  type: {{ .Values.service.type }}
+  type: {{ $serviceType }}
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.targetPort }}
+    - port: {{ $servicePort }}
+      targetPort: {{ $targetPort }}
       protocol: TCP
   selector:
     app: {{ .Chart.Name }}

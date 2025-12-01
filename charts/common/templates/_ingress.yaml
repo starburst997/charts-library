@@ -7,12 +7,19 @@ Usage: {{ include "common.ingress.standalone" . }}
 {{- end -}}
 
 {{- define "common.ingress" -}}
-{{- if .Values.ingress.enabled }}
+{{- $ingressEnabled := .Values.ingress.enabled | default true -}}
+{{- if $ingressEnabled }}
+{{- /* Ingress defaults */}}
+{{- $className := .Values.ingress.className | default "nginx" -}}
+{{- $servicePort := .Values.service.port | default 80 -}}
+{{- $proxyBodySize := .Values.ingress.proxyBodySize | default "200m" -}}
+{{- $timeout := .Values.ingress.timeout | default "3600" -}}
+{{- $keepAlive := .Values.ingress.keepAlive | default "3600" -}}
 {{- /* Rate limiting defaults - permissive values to catch abuse without affecting heavy users */}}
 {{- $rateLimitDefaults := dict "enabled" true "rpm" 600 "rps" 30 "connections" 50 "burstMultiplier" 10 "whitelist" "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" -}}
 {{- $rateLimit := merge (.Values.ingress.rateLimit | default dict) $rateLimitDefaults -}}
 {{- /* Security headers defaults */}}
-{{- $securityHeadersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" -}}
+{{- $securityHeadersDefaults := dict "enabled" true "hsts" "max-age=31536000; includeSubDomains; preload" "frameOptions" "SAMEORIGIN" "contentTypeOptions" "nosniff" "xssProtection" "1; mode=block" "referrerPolicy" "strict-origin-when-cross-origin" "permissionsPolicy" "geolocation=(), microphone=(), camera=()" "contentSecurityPolicy" "" -}}
 {{- $securityHeaders := merge (.Values.ingress.securityHeaders | default dict) $securityHeadersDefaults -}}
 {{- /* SSL redirect defaults */}}
 {{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
@@ -31,17 +38,11 @@ metadata:
     external-dns.alpha.kubernetes.io/hostname: {{ .Values.ingress.host | quote }}
     {{- end }}
     {{- end }}
-    {{- if .Values.ingress.proxyBodySize }}
-    nginx.ingress.kubernetes.io/proxy-body-size: {{ .Values.ingress.proxyBodySize | quote }}
-    {{- end }}
-    {{- if .Values.ingress.timeout }}
-    nginx.ingress.kubernetes.io/proxy-connect-timeout: {{ .Values.ingress.timeout | quote }}
-    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ .Values.ingress.timeout | quote }}
-    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ .Values.ingress.timeout | quote }}
-    {{- end }}
-    {{- if .Values.ingress.keepAlive }}
-    nginx.ingress.kubernetes.io/keep-alive: {{ .Values.ingress.keepAlive | quote }}
-    {{- end }}
+    nginx.ingress.kubernetes.io/proxy-body-size: {{ $proxyBodySize | quote }}
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: {{ $timeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-send-timeout: {{ $timeout | quote }}
+    nginx.ingress.kubernetes.io/proxy-read-timeout: {{ $timeout | quote }}
+    nginx.ingress.kubernetes.io/keep-alive: {{ $keepAlive | quote }}
     {{- /* Rate limiting annotations */}}
     {{- if $rateLimit.enabled }}
     nginx.ingress.kubernetes.io/limit-rpm: {{ $rateLimit.rpm | quote }}
@@ -59,6 +60,9 @@ metadata:
       more_set_headers "X-XSS-Protection: {{ $securityHeaders.xssProtection }}";
       more_set_headers "Referrer-Policy: {{ $securityHeaders.referrerPolicy }}";
       more_set_headers "Permissions-Policy: {{ $securityHeaders.permissionsPolicy }}";
+      {{- if $securityHeaders.contentSecurityPolicy }}
+      more_set_headers "Content-Security-Policy: {{ $securityHeaders.contentSecurityPolicy }}";
+      {{- end }}
     {{- end }}
     {{- /* Force SSL redirect */}}
     {{- if $forceSSLRedirect }}
@@ -68,7 +72,7 @@ metadata:
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
     {{- end }}
 spec:
-  ingressClassName: {{ .Values.ingress.className }}
+  ingressClassName: {{ $className }}
   tls:
     - hosts:
         - {{ .Values.ingress.host }}
@@ -83,6 +87,6 @@ spec:
               service:
                 name: {{ .Chart.Name }}
                 port:
-                  number: {{ .Values.service.port }}
+                  number: {{ $servicePort }}
 {{- end }}
 {{- end -}}

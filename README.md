@@ -161,6 +161,26 @@ ingress:
 
 **Note:** Security headers use nginx `configuration-snippet` annotation. Ensure your nginx ingress controller has `allow-snippet-annotations: "true"` in its ConfigMap (enabled by default in most installations).
 
+## Content Security Policy (CSP)
+
+CSP is **not enabled by default** because it's application-specific and can break sites if misconfigured. However, you can easily add it per-application:
+
+```yaml
+ingress:
+  securityHeaders:
+    contentSecurityPolicy: "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com"
+```
+
+**What CSP does:** Controls which resources (scripts, styles, images, etc.) can be loaded on your page. This prevents XSS attacks by blocking unauthorized scripts.
+
+**Common CSP directives:**
+- `default-src 'self'` - Only allow resources from your domain
+- `script-src 'self' https://cdn.example.com` - Allow scripts from self and specific CDN
+- `style-src 'self' 'unsafe-inline'` - Allow styles from self and inline styles
+- `img-src 'self' data: https:` - Allow images from self, data URIs, and any HTTPS
+
+**Tip:** Start with a permissive policy and tighten it. Use browser DevTools Console to see CSP violations.
+
 ## Usage
 
 ### Web Application Bundle
@@ -253,6 +273,7 @@ ingress:
     xssProtection: "1; mode=block"
     referrerPolicy: "strict-origin-when-cross-origin"
     permissionsPolicy: "geolocation=(), microphone=(), camera=()"
+    # contentSecurityPolicy: "default-src 'self'" # App-specific, disabled by default
   forceSSLRedirect: true
   sslRedirect: true
 

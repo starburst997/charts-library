@@ -99,6 +99,44 @@ When adding or modifying templates:
 3. Follow existing naming conventions: `apiVersion`, `kind`, `metadata`, `spec` structure
 4. Test that values from parent charts properly override library defaults
 
+### Embedded Defaults Pattern (Critical)
+
+**Important**: This is a Helm **library chart**. When used as a dependency, the `values.yaml` file from this library is NOT automatically merged with parent chart values. Helm only uses the parent chart's values.
+
+Therefore, **all defaults MUST be embedded directly in the templates** using one of these patterns:
+
+**Pattern 1: Simple defaults with `| default`**
+```yaml
+{{- $healthPath := (.Values.healthCheck).path | default "/" }}
+{{- $healthPort := (.Values.healthCheck).port | default .Values.service.targetPort }}
+```
+
+**Pattern 2: Object defaults with `merge` and `dict`**
+```yaml
+{{- $rateLimitDefaults := dict "enabled" true "rpm" 600 "rps" 30 "connections" 50 -}}
+{{- $rateLimit := merge (.Values.ingress.rateLimit | default dict) $rateLimitDefaults -}}
+{{- if $rateLimit.enabled }}
+nginx.ingress.kubernetes.io/limit-rpm: {{ $rateLimit.rpm | quote }}
+{{- end }}
+```
+
+**Pattern 3: Boolean defaults with `| default true/false`**
+```yaml
+{{- $forceSSLRedirect := .Values.ingress.forceSSLRedirect | default true -}}
+{{- if $forceSSLRedirect }}
+nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+{{- end }}
+```
+
+### values.yaml Purpose
+
+The `charts/common/values.yaml` file serves as **documentation only**. It shows:
+- All available configuration options
+- The exact default values that are embedded in templates
+- Brief descriptions of each field's purpose
+
+**When updating defaults**: Always update BOTH the template (where the actual default is used) AND `values.yaml` (for documentation). They must match exactly.
+
 ## Dependencies and Requirements
 
 This library assumes the following are installed in the Kubernetes cluster:

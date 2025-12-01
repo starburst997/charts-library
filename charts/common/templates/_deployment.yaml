@@ -7,13 +7,22 @@ Usage: {{ include "common.deployment.standalone" . }}
 {{- end -}}
 
 {{- define "common.deployment" -}}
+{{- /* Deployment defaults */}}
+{{- $replicaCount := .Values.replicaCount | default 1 -}}
+{{- $pullPolicy := .Values.image.pullPolicy | default "IfNotPresent" -}}
+{{- $targetPort := .Values.service.targetPort | default 3000 -}}
+{{- $imagePullSecretCreate := (.Values.imagePullSecret).create | default true -}}
+{{- $imagePullSecretName := (.Values.imagePullSecret).name | default "ghcr-auth" -}}
+{{- /* Resource defaults */}}
+{{- $resourceDefaults := dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "cpu" "500m" "memory" "256Mi") -}}
+{{- $resources := merge (.Values.resources | default dict) $resourceDefaults -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Chart.Name }}
   namespace: {{ .Values.namespace }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ $replicaCount }}
   selector:
     matchLabels:
       app: {{ .Chart.Name }}
@@ -26,10 +35,10 @@ spec:
       labels:
         app: {{ .Chart.Name }}
     spec:
-      {{- if or .Values.image.pullSecrets .Values.imagePullSecret.create }}
+      {{- if or .Values.image.pullSecrets $imagePullSecretCreate }}
       imagePullSecrets:
-        {{- if .Values.imagePullSecret.create }}
-        - name: {{ .Values.imagePullSecret.name }}
+        {{- if $imagePullSecretCreate }}
+        - name: {{ $imagePullSecretName }}
         {{- end }}
         {{- with .Values.image.pullSecrets }}
         {{- toYaml . | nindent 8 }}
@@ -38,9 +47,9 @@ spec:
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ $pullPolicy }}
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
+            - containerPort: {{ $targetPort }}
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
@@ -53,10 +62,10 @@ spec:
                   name: {{ $.Chart.Name }}
                   key: {{ $key }}
             {{- end }}
-          resources: {{- toYaml .Values.resources | nindent 12 }}
+          resources: {{- toYaml $resources | nindent 12 }}
           {{- if ne ((.Values.healthCheck).enabled | default true) false }}
           {{- $healthPath := (.Values.healthCheck).path | default "/" }}
-          {{- $healthPort := (.Values.healthCheck).port | default .Values.service.targetPort }}
+          {{- $healthPort := (.Values.healthCheck).port | default $targetPort }}
           {{- $readinessDelay := (.Values.healthCheck).readinessInitialDelay | default 5 }}
           {{- $livenessDelay := (.Values.healthCheck).livenessInitialDelay | default 15 }}
           {{- $periodSeconds := (.Values.healthCheck).periodSeconds | default 5 }}
