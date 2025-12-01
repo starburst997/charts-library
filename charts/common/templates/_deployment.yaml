@@ -52,6 +52,7 @@ spec:
           imagePullPolicy: {{ $pullPolicy }}
           ports:
             - containerPort: {{ $targetPort }}
+          {{- if or .Values.env .Values.secrets }}
           env:
             {{- range $key, $value := .Values.env }}
             - name: {{ $key }}
@@ -64,6 +65,7 @@ spec:
                   name: {{ $.Chart.Name }}
                   key: {{ $key }}
             {{- end }}
+          {{- end }}
           resources: {{- toYaml $resources | nindent 12 }}
           {{- if ne ((.Values.healthCheck).enabled | default true) false }}
           {{- $healthPath := (.Values.healthCheck).path | default "/" }}
